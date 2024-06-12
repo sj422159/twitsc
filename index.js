@@ -246,44 +246,6 @@ async function run() {
     }
 });
 
-app.post('/verify-otp', extractDeviceInfo, async (req, res) => {
-    const { email, otp } = req.body;
-    const deviceInfo = req.deviceInfo;
-
-    try {
-        const user = await userCollection.findOne({ email });
-
-        if (!user || !user.otp) {
-            return res.status(400).send('Invalid OTP');
-        }
-
-        const verified = speakeasy.totp.verify({
-            secret: process.env.OTP_SECRET,
-            encoding: 'base32',
-            token: otp,
-            window: 6
-        });
-
-        if (verified) {
-            await userCollection.updateOne(
-                { email },
-                { $unset: { otp: "", otpCreatedAt: "" } }
-            );
-
-            await userCollection.updateOne(
-                { email },
-                { $push: { devices: deviceInfo } }
-            );
-
-            res.status(200).json({ success: true, message: 'OTP verified successfully', redirect: '/home/feed' });
-        } else {
-            res.status(400).json({ error: 'Invalid OTP' });
-        }
-    } catch (error) {
-        console.error('Error verifying OTP:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
 
     app.post('/post', async (req, res) => {
       const post = req.body;
@@ -399,9 +361,7 @@ app.post('/verify-otp', async (req, res) => {
   const { email, otp, lng } = req.body;
 
   try {
-    const otpCollection = client.db("database").collection("users"); // Access the otp collection
-
-    // Find the latest OTP document for the given email
+    const otpCollection = client.db("database").collection("otp"); 
     const storedOTP = await otpCollection.findOne({ email: email }, { sort: { _id: -1 } });
 
     if (!storedOTP) {
@@ -410,7 +370,7 @@ app.post('/verify-otp', async (req, res) => {
     }
 
     if (storedOTP.otp === otp) {
-      const language = lng || 'en'; // Set the language based on the provided lang or default to English
+      const language = lng || 'en'; 
       res.status(200).json({ success: true, language });
     }
      else {
