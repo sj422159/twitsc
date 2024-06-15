@@ -132,6 +132,7 @@ async function run() {
     const postCollection = client.db("database").collection("posts"); 
     const userCollection = client.db("database").collection("users"); 
     const subscriptionCollection = client.db("database").collection("subscriptions");
+    const otpCollection = client.db("database").collection("otp");
     app.get('/user', async (req, res) => {
       const user = await userCollection.find().toArray();
       res.send(user);
@@ -189,7 +190,7 @@ async function run() {
                 encoding: 'base32'
             });
 
-            await userCollection.updateOne(
+            await otpCollection.updateOne(
                 { email },
                 { $set: { otp: newOtp, otpCreatedAt: new Date() } }
             );
