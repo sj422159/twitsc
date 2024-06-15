@@ -3,8 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const nodemailer = require('nodemailer');
-const randomstring = require('randomstring'); // Library for generating random strings
-const bcrypt = require('bcrypt'); // Library for hashing passwords
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const OTP = require('./models/OTP.js');
 const app = express();
@@ -22,12 +20,12 @@ app.use('/locales', express.static(path.join(__dirname, 'public/locales')));
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://twitter-clones-jaaynp536-swapnajit-sahoo-s-projects.vercel.app'
+  'https://twitter-clones-jaaynp536-swapnajit-sahoo-s-projects.vercel.app',
+  'https://backwits.onrender.com'
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -47,8 +45,8 @@ const uri = process.env.MONGODB_URI;
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // 30 seconds timeout
-  socketTimeoutMS: 45000 // 45 seconds timeout
+  serverSelectionTimeoutMS: 30000, 
+  socketTimeoutMS: 45000 
 });
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -69,41 +67,33 @@ const plans = {
     postingLimit: 1200,
   },
 };
-
-// Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Your Gmail email
-    pass: process.env.EMAIL_PASSWORD // Your Gmail password
+    user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASSWORD 
   }
 });
-
-// Generate OTP
 const generateOTP = () => {
   const otpLength = 6;
   let otp = '';
   for (let i = 0; i < otpLength; i++) {
-    otp += Math.floor(Math.random() * 10); // Generate a random digit (0-9) and append to the OTP
-  }
+    otp += Math.floor(Math.random() * 10);  }
   return otp;
 };
 
-// Store OTP in MongoDB
 const storeOTP = async (email, otp) => {
   try {
-    const otpCollection = client.db("database").collection("otp"); // Access the otp collection
-    // Insert OTP document into the otp collection
+    const otpCollection = client.db("database").collection("otp"); 
     await otpCollection.insertOne({ email, otp });
     console.log('Stored OTP in database:', otp);
-    return true; // Return true if OTP is stored successfully
-  } catch (error) {
+    return true; 
+    } catch (error) {
     console.error('Error storing OTP in database:', error);
-    return false; // Return false if there's an error storing OTP
-  }
+    return false; 
+    }
 };
 
-// Send OTP via email
 const sendOTP = async (email, otp) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -134,16 +124,14 @@ const extractDeviceInfo = (req, res, next) => {
 };
 
 
-// Connect to MongoDB and start the server
 async function run() {
   try {
     await client.connect();
     console.log("Connected to MongoDB!");
 
-    const postCollection = client.db("database").collection("posts"); // this collection is for team-ekt
-    const userCollection = client.db("database").collection("users"); // this collection is for team-srv
+    const postCollection = client.db("database").collection("posts"); 
+    const userCollection = client.db("database").collection("users"); 
     const subscriptionCollection = client.db("database").collection("subscriptions");
-    // get
     app.get('/user', async (req, res) => {
       const user = await userCollection.find().toArray();
       res.send(user);
@@ -186,7 +174,6 @@ async function run() {
             return res.status(400).json({ error: 'Invalid password' });
         }
 
-        // Initialize devices array if it doesn't exist
         user.devices = user.devices || [];
 
         const existingDevice = user.devices.find(device =>
@@ -252,8 +239,6 @@ async function run() {
       const result = await postCollection.insertOne(post);
       res.send(result);
     })
-
-    // patch
     app.patch('/userUpdates/:email', async (req, res) => {
       const filter = req.params;
       const profile = req.body;
@@ -333,20 +318,18 @@ async function run() {
 }
 
 run().catch(console.dir);
-
-// POST route for generating and sending OTP
 app.post('/send-otp', async (req, res) => {
   try {
     const { email } = req.body;
     const otp = generateOTP();
-    console.log('Generated OTP:', otp); // Log the generated OTP
-    const otpStored = await storeOTP(email, otp); // Store OTP in database
-    console.log('OTP stored in database:', otpStored); // Log the result of storing OTP
+   // console.log('Generated OTP:', otp); 
+    const otpStored = await storeOTP(email, otp); 
+//    console.log('OTP stored in database:', otpStored); 
     if (!otpStored) {
       throw new Error('Error generating OTP');
     }
-    const otpSent = await sendOTP(email, otp); // Send OTP via email
-    console.log('OTP sent via email:', otpSent); // Log the result of sending OTP via email
+    const otpSent = await sendOTP(email, otp);
+    console.log('OTP sent via email:', otpSent); 
     if (!otpSent) {
       throw new Error('Error sending OTP');
     }
