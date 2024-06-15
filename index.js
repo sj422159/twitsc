@@ -20,7 +20,7 @@ app.use('/locales', express.static(path.join(__dirname, 'public/locales')));
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://twitter-clones-jaaynp536-swapnajit-sahoo-s-projects.vercel.app',
+  'https://twitter-clones-tan.vercel.app',
   'https://backwits.onrender.com'
 ];
 
