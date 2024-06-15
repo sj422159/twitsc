@@ -84,7 +84,7 @@ const generateOTP = () => {
 
 const storeOTP = async (email, otp) => {
   try {
-    const otpCollection = client.db("database").collection("user"); 
+    const otpCollection = client.db("database").collection("users"); 
     await otpCollection.insertOne({ email, otp });
     console.log('Stored OTP in database:', otp);
     return true; 
@@ -345,7 +345,7 @@ app.post('/verify-otp', async (req, res) => {
   const { email, otp, lng } = req.body;
 
   try {
-    const otpCollection = client.db("database").collection("user"); 
+    const otpCollection = client.db("database").collection("users"); 
     const storedOTP = await otpCollection.findOne({ email: email }, { sort: { _id: -1 } });
 
     if (!storedOTP) {
